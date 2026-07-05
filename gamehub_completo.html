@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameHub - Plataforma Completa</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        fundo: '#12151C',
+                        secundario: '#1E293B',
+                        principal: '#2563EB',
+                        pix: '#00B37E',
+                        azulVerificado: '#3B82F6',
+                        amareloDestaque: '#F59E0B',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .scroll-smooth {
+                scroll-behavior: smooth;
+            }
+            .selo-verificado {
+                background: linear-gradient(135deg, #3B82F6, #2563EB);
+            }
+            .selo-destaque {
+                background: linear-gradient(135deg, #FBBF24, #F59E0B);
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-lg hover:shadow-principal/20;
+            }
+            .btn-padrao {
+                @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-principal/50;
+            }
+            .btn-principal {
+                @apply btn-padrao bg-principal hover:bg-principal/90 text-white;
+            }
+            .btn-secundario {
+                @apply btn-padrao bg-secundario hover:bg-secundario/90 text-white;
+            }
+            .btn-pix {
+                @apply btn-padrao bg-pix hover:bg-pix/90 text-white;
+            }
+            .input-padrao {
+                @apply w-full px-3 py-2 bg-fundo border border-secundario rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-principal/50 focus:border-principal;
+            }
+        }
+    </style>
+</head>
+<body class="bg-fundo text-gray-100 scroll-smooth min-h-screen">
+    <!-- Barra de Navegação -->
+    <header class="sticky top-0 z-50 bg-fundo/95 backdrop-blur-sm border-b border-secundario">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa fa-gamepad text-2xl text-principal"></i>
+                <h1 class="text-xl font-bold">GameHub</h1>
+            </div>
+            <nav class="hidden md:flex items-center gap-6">
+                <button onclick="abrirSecao('feed')" class="hover:text-principal transition-colors">Feed</button>
+                <button onclick="abrirSecao('projetos')" class="hover:text-principal transition-colors">Projetos</button>
+                <button onclick="abrirSecao('criadores')" class="hover:text-principal transition-colors">Criadores</button>
+            </nav>
+            <div class="flex items-center gap-3">
+                <button onclick="abrirModalPerfil()" class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-principal flex items-center justify-center">
+                        <i class="fa fa-user"></i>
+                    </div>
+                    <span class="hidden sm:inline-block font-medium" id="nomeUsuario">Meu Perfil</span>
+                </button>
+                <button onclick="abrirModalAdmin()" class="btn-principal px-3 py-1.5 text-sm hidden md:block">
+                    <i class="fa fa-cog mr-1"></i>Admin
+                </button>
+                <button onclick="abrirModalAdmin()" class="btn-principal px-2 py-1.5 text-sm md:hidden">
+                    <i class="fa fa-cog"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="container mx-auto px-4 py-6">
+        <!-- Seção Feed -->
+        <section id="secao-feed" class="space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold">Feed da Comunidade</h2>
+                <button onclick="abrirModalCriarPost()" class="btn-principal">
+                    <i class="fa fa-plus mr-2"></i>Criar Publicação
+                </button>
+            </div>
+            <div id="lista-posts" class="space-y-4"></div>
+        </section>
+
+        <!-- Seção Projetos -->
+        <section id="secao-projetos" class="hidden space-y-6">
+            <div class="flex justify-between items-center">
+                <h2 class="text-2xl font-bold">Projetos Publicados</h2>
+                <button onclick="abrirModalPublicarJogo()" class="btn-principal">
+                    <i class="fa fa-upload mr-2"></i>Publicar Jogo
+                </button>
+            </div>
+            <div id="lista-projetos" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </section>
+
+        <!-- Seção Criadores -->
+        <section id="secao-criadores" class="hidden space-y-6">
+            <h2 class="text-2xl font-bold">Criadores em Destaque</h2>
+            <div id="lista-criadores" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </section>
+    </main>
+
+    <!-- MODAIS -->
+    <!-- Modal Perfil -->
+    <div id="modal-perfil" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-secundario rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="p-5 border-b border-fundo flex justify-between items-center">
+                <h3 class="text-xl font-bold">Perfil do Criador</h3>
+                <button onclick="fecharModal('perfil')" class="text-gray-400 hover:text-white">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-16 h-16 rounded-full bg-principal flex items-center justify-center text-2xl">
+                        <i class="fa fa-user"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <h4 id="perfil-nome" class="text-lg font-bold">Meu Perfil</h4>
+                            <span class="selo-verificado text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <i class="fa fa-check"></i> Verificado
+                            </span>
+                            <span class="selo-destaque text-xs px-2 py-0.5 rounded-full text-black flex items-center gap-1">
+                                <i class="fa fa-star"></i> Destaque
+                            </span>
+                        </div>
+                        <p id="perfil-email" class="text-gray-400 text-sm">makeindieegames.gamehub@gmail.com</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div class="bg-fundo rounded-lg p-3">
+                        <p class="text-xl font-bold" id="perfil-seguidores">0</p>
+                        <p class="text-xs text-gray-400">Seguidores</p>
+                    </div>
+                    <div class="bg-fundo rounded-lg p-3">
+                        <p class="text-xl font-bold" id="perfil-curtidas">0</p>
+                        <p class="text-xs text-gray-400">Curtidas</p>
+                    </div>
+                    <div class="bg-fundo rounded-lg p-3">
+                        <p class="text-xl font-bold text-pix" id="perfil-saldo">R$ 0,00</p>
+                        <p class="text-xs text-gray-400">Saldo PIX</p>
+                    </div>
+                </div>
+
+                <div class="bg-fundo rounded-lg p-4">
+                    <h5 class="font-medium mb-2">Chave PIX</h5>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="perfil-chave-pix" value="makeindieegames.gamehub@gmail.com" readonly class="flex-1 bg-secundario px-3 py-2 rounded text-sm">
+                        <button onclick="copiarChavePix()" class="btn-pix px-3 py-2 text-sm">
+                            <i class="fa fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <h5 class="font-medium">Configurações do Perfil</h5>
+                    <div>
+                        <label class="text-sm text-gray-400 mb-1 block">Nome do Criador</label>
+                        <input type="text" id="editar-nome-perfil" class="input-padrao" placeholder="Digite seu nome">
+                    </div>
+                    <button onclick="salvarPerfil()" class="btn-principal w-full">Salvar Alterações</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Criar Post -->
+    <div id="modal-criar-post" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-secundario rounded-xl w-full max-w-md">
+            <div class="p-5 border-b border-fundo flex justify-between items-center">
+                <h3 class="text-xl font-bold">Nova Publicação</h3>
+                <button onclick="fecharModal('criar-post')" class="text-gray-400 hover:text-white">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <textarea id="texto-post" rows="4" class="input-padrao" placeholder="Compartilhe novidades, atualizações ou projetos..."></textarea>
+                <input type="url" id="link-midia-post" class="input-padrao" placeholder="Link de vídeo (YouTube, Vimeo, etc) - opcional">
+                <button onclick="publicarPost()" class="btn-principal w-full">Publicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Publicar Jogo -->
+    <div id="modal-publicar-jogo" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-secundario rounded-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="p-5 border-b border-fundo flex justify-between items-center">
+                <h3 class="text-xl font-bold">Publicar Novo Jogo</h3>
+                <button onclick="fecharModal('publicar-jogo')" class="text-gray-400 hover:text-white">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div>
+                    <label class="text-sm text-gray-400 mb-1 block">Nome do Jogo</label>
+                    <input type="text" id="nome-jogo" class="input-padrao" placeholder="Ex: Aventura Espacial">
+                </div>
+                <div>
+                    <label class="text-sm text-gray-400 mb-1 block">Categoria/Motor</label>
+                    <select id="categoria-jogo" class="input-padrao">
+                        <option value="Unity">Unity</option>
+                        <option value="Godot">Godot</option>
+                        <option value="PS2 Homebrew">PS2 Homebrew</option>
+                        <option value="Outro">Outro</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-sm text-gray-400 mb-1 block">Descrição</label>
+                    <textarea id="descricao-jogo" rows="3" class="input-padrao" placeholder="Conte mais sobre seu projeto..."></textarea>
+                </div>
+                <div>
+                    <label class="text-sm text-gray-400 mb-1 block">Link da Loja</label>
+                    <select id="tipo-link" class="input-padrao mb-2">
+                        <option value="Itch.io">Itch.io</option>
+                        <option value="GOG">GOG</option>
+                        <option value="Steam">Steam</option>
+                        <option value="Página Própria">Página Própria</option>
+                    </select>
+                    <input type="url" id="link-jogo" class="input-padrao" placeholder="https://...">
+                </div>
+                <button onclick="salvarJogo()" class="btn-principal w-full">Publicar Projeto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Doação -->
+    <div id="modal-doacao" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-secundario rounded-xl w-full max-w-sm">
+            <div class="p-5 border-b border-fundo flex justify-between items-center">
+                <h3 class="text-xl font-bold">Doação via PIX</h3>
+                <button onclick="fecharModal('doacao')" class="text-gray-400 hover:text-white">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-4">
+                <p class="text-center text-gray-300">Apoie este criador com um valor de sua preferência 💙</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="selecionarValorDoacao(5)" class="btn-secundario">R$ 5,00</button>
+                    <button onclick="selecionarValorDoacao(10)" class="btn-secundario">R$ 10,00</button>
+                    <button onclick="selecionarValorDoacao(20)" class="btn-secundario">R$ 20,00</button>
+                    <button onclick="selecionarValorDoacao(50)" class="btn-secundario">R$ 50,00</button>
+                    <button onclick="selecionarValorDoacao(100)" class="btn-secundario">R$ 100,00</button>
+                    <input type="number" id="valor-doacao" min="1" step="1" class="input-padrao" placeholder="Outro valor">
+                </div>
+                <div class="bg-fundo rounded-lg p-3">
+                    <p class="text-sm text-gray-400 mb-1">Chave PIX do criador:</p>
+                    <p id="chave-pix-doacao" class="text-sm font-medium"></p>
+                </div>
+                <button onclick="confirmarDoacao()" class="btn-pix w-full">
+                    <i class="fa fa-credit-card mr-2"></i>Confirmar Doação
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Administração -->
+    <div id="modal-admin" class="fixed inset-0 bg-black/70 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-secundario rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-5 border-b border-fundo flex justify-between items-center">
+                <h3 class="text-xl font-bold">Painel de Administração</h3>
+                <button onclick="fecharModal('admin')" class="text-gray-400 hover:text-white">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-5 space-y-6">
+                <!-- Estatísticas -->
+                <div>
+                    <h4 class="font-bold text-lg mb-3">Estatísticas Gerais</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="bg-fundo rounded-lg p-3 text-center">
+                            <p class="text-xl font-bold" id="admin-total-usuarios">0</p>
+                            <p class="text-xs text-gray-400">Usuários</p>
+                        </div>
+                        <div class="bg-fundo rounded-lg p-3 text-center">
+                            <p class="text-xl font-bold" id="admin-total-jogos">0</p>
+                            <p class="text-xs text-gray-400">Jogos</p>
+                        </div>
+                        <div class="bg-fundo rounded-lg p-3 text-center">
+                            <p class="text-xl font-bold" id="admin-total-posts">0</p>
+                            <p class="text-xs text-gray-400">Publicações</p>
+                        </div>
+                        <div class="bg-fundo rounded-lg p-3 text-center">
+                            <p class="text-xl font-bold text-pix" id="admin-total-saldos">R$ 0,00</p>
+                            <p class="text-xs text-gray-400">Total em Saldos</p>
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <canvas id="grafico-admin" height="200"></canvas>
+                    </div>
+                </div>
+
+                <!-- Configurações de Simulação -->
+                <div>
+                    <h4 class="font-bold text-lg mb-3">Velocidade das Interações</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button onclick="definirVelocidade('lenta')" class="btn-secundario">Lenta</button>
+                        <button onclick="definirVelocidade('normal')" class="btn-principal">Normal</button>
+                        <button onclick="definirVelocidade('rapida')" class="btn-secundario">Rápida</button>
+                        <button onclick="definirVelocidade('muito-rapida')" class="btn-secundario">Muito Rápida</button>
+                    </div>
+
+                    <h4 class="font-bold text-lg mb-3 mt-6">Taxas de Engajamento (%)</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm">Seguir perfil</label>
+                            <input type="number" id="taxa-seguir" min="0" max="100" step="0.1" value="0.8" class="w-20 input-padrao text-center">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm">Curtir conteúdo</label>
+                            <input type="number" id="taxa-curtir" min="0" max="100" step="0.1" value="1.5" class="w-20 input-padrao text-center">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label class="text-sm">Fazer doação</label>
+                            <input type="number" id="taxa-doar" min="0" max="100" step="0.1" value="0.2" class="w-20 input-padrao text-center">
+                        </div>
+                        <button onclick="salvarTaxas()" class="btn-principal">Salvar Taxas</button>
+                    </div>
+                </div>
+
+                <!-- Ferramentas -->
+                <div>
+                    <h4 class="font-bold text-lg mb-3">Ferramentas</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <button onclick="gerarBackup()" class="btn-secundario">
+                            <i class="fa fa-download mr-2"></i>Gerar Backup
+                        </button>
+                        <button onclick="restaurarBackup()" class="btn-secundario">
+                            <i class="fa fa-upload mr-2"></i>Restaurar Backup
+                        </button>
+                        <button onclick="gerarRelatorio()" class="btn-secundario">
+                            <i class="fa fa-file-text mr-2"></i>Gerar Relatório
+                        </button>
+                        <button onclick="reiniciarDados()" class="bg-red-900/40 hover:bg-red-900/60 text-red-300 btn-padrao">
+                            <i class="fa fa-refresh mr-2"></i>Reiniciar Todos os Dados
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DADOS INICIAIS E CONFIGURAÇÕES
+        let dados = {
+            perfilPrincipal: {
+                nome: "Meu Perfil",
+                email: "makeindieegames.gamehub@gmail.com",
+                chavePix: "makeindieegames.gamehub@gmail.com",
+                seguidores: 1247,
+                curtidasRecebidas: 3892,
+                saldo: 1580.75
+            },
+            criadores: [
+                { id: 1, nome: "Studio PixelGod", email: "contato@pixelgod.dev", chavePix: "contato@pixelgod.dev", seguidores: 986, curtidas: 2745, saldo: 920.50 },
+                { id: 2, nome: "PS2 RetroDev", email: "homebrew@ps2dev.com.br", chavePix: "homebrew@ps2dev.com.br", seguidores: 1532, curtidas: 4120, saldo: 2150.00 },
+                { id: 3, nome: "Unity Indie Lab", email: "projetos@unitylab.xyz", chavePix: "projetos@unitylab.xyz", seguidores: 879, curtidas: 1980, saldo: 670.90 },
+                { id: 4, nome: "Godot Brasil Team", email: "comunidade@godotbrasil.org", chavePix: "comunidade@godotbrasil.org", seguidores: 2105, curtidas: 5670, saldo: 3420.30 }
+            ],
+            publicacoes: [],
+            projetos: [],
+            configuracoes: {
+                velocidade: "normal",
+                taxaSeguir: 0.8,
+                taxaCurtir: 1.5,
+                taxaDoar: 0.2
+            },
+            estatisticas: {
+                totalUsuarios: 5287,
+                totalJogos: 124,
+                totalPublicacoes: 892,
+                totalSaldos: 12450.80
+            }
+        };
+
+        let intervaloSimulacao;
+        let graficoAdmin;
+        let criadorAlvoDoacao = null;
+
+        // FUNÇÕES DE PERSISTÊNCIA
+        function carregarDados() {
+            const dadosSalvos = localStorage.getItem('gamehub_dados');
+            if (dadosSalvos) {
+                dados = JSON.parse(dadosSalvos);
+            } else {
+                salvarDados();
+            }
+            atualizarInterface();
+            iniciarSimulacao();
+        }
+
+        function salvarDados() {
+            localStorage.setItem('gamehub_dados', JSON.stringify(dados));
+            atualizarInterface();
+        }
+
+        // FUNÇÕES DE NAVEGAÇÃO
+        function abrirSecao(nomeSecao) {
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`secao-${nomeSecao}`).classList.remove('hidden');
+            
+            if (nomeSecao === 'criadores') renderizarCriadores();
+            if (nomeSecao === 'projetos') renderizarProjetos();
+        }
+
+        // FUNÇÕES DE MODAIS
+        function abrirModal(idModal) {
+            document.getElementById(`modal-${idModal}`).classList.remove('hidden');
+            if (idModal === 'perfil') preencherModalPerfil();
+            if (idModal === 'admin') preencherPainelAdmin();
+        }
+
+        function fecharModal(idModal) {
+            document.getElementById(`modal-${idModal}`).classList.add('hidden');
+        }
+
+        function abrirModalPerfil() { abrirModal('perfil'); }
+        function abrirModalCriarPost() { abrirModal('criar-post'); }
+        function abrirModalPublicarJogo() { abrirModal('publicar-jogo'); }
+        function abrirModalAdmin() { abrirModal('admin'); }
+
+        function preencherModalPerfil() {
+            document.getElementById('perfil-nome').textContent = dados.perfilPrincipal.nome;
+            document.getElementById('nomeUsuario').textContent = dados.perfilPrincipal.nome;
+            document.getElementById('perfil-email').textContent = dados.perfilPrincipal.email;
+            document.getElementById('perfil-seguidores').textContent = dados.perfilPrincipal.seguidores.toLocaleString('pt-BR');
+            document.getElementById('perfil-curtidas').textContent = dados.perfilPrincipal.curtidasRecebidas.toLocaleString('pt-BR');
+            document.getElementById('perfil-saldo').textContent = `R$ ${dados.perfilPrincipal.saldo.toFixed(2).replace('.', ',')}`;
+            document.getElementById('perfil-chave-pix').value = dados.perfilPrincipal.chavePix;
+            document.getElementById('editar-nome-perfil').value = dados.perfilPrincipal.nome;
+        }
+
+        function salvarPerfil() {
+            const novoNome = document.getElementById('editar-nome-perfil').value.trim();
+            if (novoNome) {
+                dados.perfilPrincipal.nome = novoNome;
+                salvarDados();
+                alert('Perfil atualizado com sucesso!');
+                fecharModal('perfil');
+            }
+        }
+
+        function copiarChavePix() {
+            navigator.clipboard.writeText(dados.perfilPrincipal.chavePix)
+                .then(() => alert('Chave PIX copiada!'));
+        }
+
+        // PUBLICAÇÕES E PROJETOS
+        function publicarPost() {
+            const texto = document.getElementById('texto-post').value.trim();
+            const linkMidia = document.getElementById('link-midia-post').value.trim();
+            
+            if (!texto) return alert('Escreva algo para publicar!');
+            
+            dados.publicacoes.unshift({
+                id: Date.now(),
+                autor: dados.perfilPrincipal.nome,
+                texto: texto,
+                linkMidia: linkMidia,
+                curtidas: Math.floor(Math.random() * 150),
+                data: new Date().toLocaleString('pt-BR')
+            });
+            
+            dados.estatisticas.totalPublicacoes++;
+            salvarDados();
+            fecharModal('criar-post');
+            document.getElementById('texto-post').value = '';
+            document.getElementById('link-midia-post').value = '';
+            renderizarPublicacoes();
+        }
+
+        function salvarJogo() {
+            const nome = document.getElementById('nome-jogo').value.trim();
+            const categoria = document.getElementById('categoria-jogo').value;
+            const descricao = document.getElementById('descricao-jogo').value.trim();
+            const tipoLink = document.getElementById('tipo-link').value;
+            const link = document.getElementById('link-jogo').value.trim();
+            
+            if (!nome || !link) return alert('Preencha nome e link do projeto!');
+            
+            dados.projetos.unshift({
+                id: Date.now(),
+                nome: nome,
+                categoria: categoria,
+                descricao: descricao,
+                tipoLink: tipoLink,
+                link: link,
+                autor: dados.perfilPrincipal.nome,
+                visualizacoes: Math.floor(Math.random() * 500),
+                data: new Date().toLocaleString('pt-BR')
+            });
+            
+            dados.estatisticas.totalJogos++;
+            salvarDados();
+            fecharModal('publicar-jogo');
+            renderizarProjetos();
+        }
+
+        function renderizarPublicacoes() {
+            const container = document.getElementById('lista-posts');
+            container.innerHTML = '';
+            
+            const todasPublicacoes = [
+                ...dados.publicacoes,
+                ...dados.criadores.flatMap(c => [{
+                    id: Date.now() + Math.random(),
+                    autor: c.nome,
+                    texto: `Estamos trabalhando em novidades incríveis para a plataforma! Acompanhem as atualizações 🚀`,
+                    curtidas: Math.floor(Math.random() * 200),
+                    data: new Date(Date.now() - Math.random() * 86400000).toLocaleString('pt-BR')
+                }])
+            ].sort((a, b) => b.id - a.id);
+
+            todasPublicacoes.slice(0, 10).forEach(post => {
+                const card = document.createElement('div');
+                card.className = 'bg-secundario rounded-xl p-4 card-hover';
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 mb-3">
+                        <div class="w-10 h-10 rounded-full bg-principal/30 flex items-center justify-center">
+                            <i class="fa fa-user-circle text-principal"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium">${post.autor}</span>
+                                <span class="selo-verificado text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                                    <i class="fa fa-check text-[8px]"></i>
+                                </span>
+                            </div>
+                            <span class="text-xs text-gray-400">${post.data}</span>
+                        </div>
+                    </div>
+                    <p class="mb-3 whitespace-pre-line">${post.texto}</p>
+                    ${post.linkMidia ? `<a href="${post.linkMidia}" target="_blank" class="text-principal text-sm hover:underline mb-3 inline-block">
+                        <i class="fa fa-play-circle mr-1"></i>Ver mídia externa
+                    </a>` : ''}
+                    <div class="flex items-center gap-4 text-sm text-gray-400">
+                        <button class="flex items-center gap-1 hover:text-red-400 transition-colors">
+                            <i class="fa fa-heart"></i> ${post.curtidas}
+                        </button>
+                        <button class="flex items-center gap-1 hover:text-principal transition-colors">
+                            <i class="fa fa-share-alt"></i> Compartilhar
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderizarProjetos() {
+            const container = document.getElementById('lista-projetos');
+            container.innerHTML = '';
+
+            const todosProjetos = [
+                ...dados.projetos,
+                { id: 1, nome: "Retro Platformer PS2", categoria: "PS2 Homebrew", descricao: "Jogo de plataforma feito do zero para PlayStation 2 com gráficos nostálgicos", tipoLink: "Itch.io", link: "#", autor: "PS2 RetroDev", visualizacoes: 1245, data: "02/07/2026" },
+                { id: 2, nome: "RPG Fantasia Celestial", categoria: "Godot", descricao: "Projeto de RPG com sistema de combate em turnos e mundo aberto", tipoLink: "GOG", link: "#", autor: "Godot Brasil Team", visualizacoes: 987, data: "30/06/2026" },
+                { id: 3, nome: "Corrida Espacial", categoria: "Unity", descricao: "Jogo de corrida com naves e física realista", tipoLink: "Steam", link: "#", autor: "Studio PixelGod", visualizacoes: 756, data: "28/06/2026" }
+            ];
+
+            todosProjetos.forEach(jogo => {
+                const card = document.createElement('div');
+                card.className = 'bg-secundario rounded-xl overflow-hidden card-hover';
+                card.innerHTML = `
+                    <div class="h-32 bg-gradient-to-br from-principal/30 to-pix/30 flex items-center justify-center">
+                        <i class="fa fa-gamepad text-4xl text-white/70"></i>
+                    </div>
+                    <div class="p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold">${jogo.nome}</h4>
+                            <span class="text-xs px-2 py-1 rounded-full bg-fundo">${jogo.categoria}</span>
+                        </div>
+                        <p class="text-sm text-gray-400 mb-3 line-clamp-2">${jogo.descricao}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-400">${jogo.autor} • ${jogo.visualizacoes} visualizações</span>
+                            <a href="${jogo.link}" target="_blank" class="btn-principal text-xs px-2 py-1">${jogo.tipoLink}</a>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderizarCriadores() {
+            const container = document.getElementById('lista-criadores');
+            container.innerHTML = '';
+
+            const todosCriadores = [dados.perfilPrincipal, ...dados.criadores];
+            todosCriadores.forEach(criador => {
+                const card = document.createElement('div');
+                card.className = 'bg-secundario rounded-xl p-4 card-hover';
+                card.innerHTML = `
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-full bg-principal flex items-center justify-center text-xl">
+                            <i class="fa fa-user"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <h4 class="font-bold">${criador.nome}</h4>
+                                <span class="selo-verificado text-[10px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                                    <i class="fa fa-check text-[8px]"></i>
+                                </span>
+                                <span class="selo-destaque text-[10px] px-1.5 py-0.5 rounded-full text-black flex items-center gap-0.5">
+                                    <i class="fa fa-star text-[8px]"></i>
+                                </span>
+                            </div>
+                            <p class="text-xs text-gray-400">${criador.email}</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                        <div class="bg-fundo rounded p-2">
+                            <p class="text-sm font-bold">${criador.seguidores.toLocaleString('pt-BR')}</p>
+                            <p class="text-[10px] text-gray-400">Seguidores</p>
+                        </div>
+                        <div class="bg-fundo rounded p-2">
+                            <p class="text-sm font-bold">${criador.curtidas.toLocaleString('pt-BR')}</p>
+                            <p class="text-[10px] text-gray-400">Curtidas</p>
+                        </div>
+                        <div class="bg-fundo rounded p-2">
+                            <p class="text-sm font-bold text-pix">R$ ${criador.saldo.toFixed(2).replace('.', ',')}</p>
+                            <p class="text-[10px] text-gray-400">Saldo</p>
+                        </div>
+                    </div>
+                    <button onclick="abrirDoacao('${criador.chavePix}', '${criador.nome}')" class="btn-pix w-full text-sm">
+                        <i class="fa fa-heart mr-1"></i>Apoiar
+                    </button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // SISTEMA DE DOAÇÕES
+        function abrirDoacao(chavePix, nomeCriador) {
+            criadorAlvoDoacao = { chave: chavePix, nome: nomeCriador };
+            document.getElementById('chave-pix-doacao').textContent = chavePix;
+            abrirModal('doacao');
+        }
+
+        function selecionarValorDoacao(valor) {
+            document.getElementById('valor-doacao').value = valor;
+        }
+
+        function confirmarDoacao() {
+            const valor = parseFloat(document.getElementById('valor-doacao').value);
+            if (!valor || valor <= 0) return alert('Informe um valor válido!');
+
+            if (criadorAlvoDoacao.chave === dados.perfilPrincipal.chavePix) {
+                dados.perfilPrincipal.saldo += valor;
+            } else {
+                const criador = dados.criadores.find(c => c.chavePix === criadorAlvoDoacao.chave);
+                if (criador) criador.saldo += valor;
+            }
+
+            dados.estatisticas.totalSaldos += valor;
+            salvarDados();
+            fecharModal('doacao');
+            alert(`Doação de R$ ${valor.toFixed(2).replace('.', ',')} realizada com sucesso! O valor foi creditado instantaneamente.`);
+        }
+
+        // PAINEL ADMINISTRATIVO
+        function preencherPainelAdmin() {
+            document.getElementById('admin-total-usuarios').textContent = dados.estatisticas.totalUsuarios.toLocaleString('pt-BR');
+            document.getElementById('admin-total-jogos').textContent = dados.estatisticas.totalJogos.toLocaleString('pt-BR');
+            document.getElementById('admin-total-posts').textContent = dados.estatisticas.totalPublicacoes.toLocaleString('pt-BR');
+            document.getElementById('admin-total-saldos').textContent = `R$ ${dados.estatisticas.totalSaldos.toFixed(2).replace('.', ',')}`;
+            
+            document.getElementById('taxa-seguir').value = dados.configuracoes.taxaSeguir;
+            document.getElementById('taxa-curtir').value = dados.configuracoes.taxaCurtir;
+            document.getElementById('taxa-doar').value = dados.configuracoes.taxaDoar;
+
+            if (graficoAdmin) graficoAdmin.destroy();
+            const ctx = document.getElementById('grafico-admin').getContext('2d');
+            graficoAdmin = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Usuários', 'Jogos', 'Publicações', 'Doações'],
+                    datasets: [{
+                        label: 'Métricas Gerais',
+                        data: [dados.estatisticas.totalUsuarios, dados.estatisticas.totalJogos, dados.estatisticas.totalPublicacoes, Math.floor(dados.estatisticas.totalSaldos / 10)],
+                        backgroundColor: ['#2563EB', '#00B37E', '#F59E0B', '#EC4899'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, grid: { color: '#1E293B' } }, x: { grid: { display: false } } }
+                }
+            });
+        }
+
+        function definirVelocidade(tipo) {
+            dados.configuracoes.velocidade = tipo;
+            salvarDados();
+            iniciarSimulacao();
+            alert(`Velocidade definida como: ${tipo.replace('-', ' ').toUpperCase()}`);
+        }
+
+        function salvarTaxas() {
+            dados.configuracoes.taxaSeguir = parseFloat(document.getElementById('taxa-seguir').value);
+            dados.configuracoes.taxaCurtir = parseFloat(document.getElementById('taxa-curtir').value);
+            dados.configuracoes.taxaDoar = parseFloat(document.getElementById('taxa-doar').value);
+            salvarDados();
+            alert('Taxas de engajamento atualizadas!');
+        }
+
+        function gerarBackup() {
+            const backup = btoa(JSON.stringify(dados));
+            const data = new Date().toISOString().slice(0,10);
+            const a = document.createElement('a');
+            a.href = `data:application/json;charset=utf-8,${encodeURIComponent(backup)}`;
+            a.download = `gamehub-backup-${data}.json`;
+            a.click();
+            alert('Backup gerado com sucesso!');
+        }
+
+        function restaurarBackup() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const leitor = new FileReader();
+                leitor.onload = () => {
+                    try {
+                        dados = JSON.parse(atob(leitor.result));
+                        salvarDados();
+                        alert('Backup restaurado com sucesso!');
+                    } catch {
+                        alert('Arquivo de backup inválido!');
+                    }
+                };
+                leitor.readAsText(e.target.files[0]);
+            };
+            input.click();
+        }
+
+        function gerarRelatorio() {
+            const relatorio = `
+RELATÓRIO GERAL - GAMEHUB
+Data: ${new Date().toLocaleString('pt-BR')}
+
+📊 ESTATÍSTICAS
+- Total de usuários: ${dados.estatisticas.totalUsuarios}
+- Total de projetos publicados: ${dados.estatisticas.totalJogos}
+- Total de publicações: ${dados.estatisticas.totalPublicacoes}
+- Valor total em saldos: R$ ${dados.estatisticas.totalSaldos.toFixed(2).replace('.', ',')}
+
+👤 CRIADORES DESTAQUE
+${[dados.perfilPrincipal, ...dados.criadores].map(c => `- ${c.nome}: ${c.seguidores} seguidores | Saldo R$ ${c.saldo.toFixed(2).replace('.', ',')}`).join('\n')}
+
+⚙️ CONFIGURAÇÕES
+- Velocidade: ${dados.configuracoes.velocidade}
+- Taxa de seguir: ${dados.configuracoes.taxaSeguir}%
+- Taxa de curtir: ${dados.configuracoes.taxaCurtir}%
+- Taxa de doar: ${dados.configuracoes.taxaDoar}%
+            `.trim();
+            
+            const blob = new Blob([relatorio], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `relatorio-gamehub-${new Date().toISOString().slice(0,10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            alert('Relatório gerado com sucesso!');
+        }
+
+        function reiniciarDados() {
+            if (confirm('Tem certeza? TODOS os dados serão apagados permanentemente!')) {
+                localStorage.removeItem('gamehub_dados');
+                location.reload();
+            }
+        }
+
+        // SISTEMA DE INTERAÇÕES AUTOMÁTICAS
+        function iniciarSimulacao() {
+            if (intervaloSimulacao) clearInterval(intervaloSimulacao);
+            
+            const intervalos = { lenta: 8000, normal: 4000, rapida: 2000, 'muito-rapida': 1000 };
+            const intervalo = intervalos[dados.configuracoes.velocidade];
+
+            intervaloSimulacao = setInterval(() => {
+                // Aumenta usuários gradualmente
+                if (Math.random() < 0.3) dados.estatisticas.totalUsuarios++;
+
+                // Interações com perfil principal
+                if (Math.random() * 100 < dados.configuracoes.taxaSeguir) dados.perfilPrincipal.seguidores++;
+                if (Math.random() * 100 < dados.configuracoes.taxaCurtir) dados.perfilPrincipal.curtidasRecebidas += Math.floor(Math.random() * 5) + 1;
+                if (Math.random() * 100 < dados.configuracoes.taxaDoar) {
+                    const valores = [5, 10, 20, 50, 100];
+                    const valor = valores[Math.floor(Math.random() * valores.length)];
+                    dados.perfilPrincipal.saldo += valor;
+                    dados.estatisticas.totalSaldos += valor;
+                }
+
+                // Interações com outros criadores
+                dados.criadores.forEach(c => {
+                    if (Math.random() * 100 < dados.configuracoes.taxaSeguir) c.seguidores++;
+                    if (Math.random() * 100 < dados.configuracoes.taxaCurtir) c.curtidas += Math.floor(Math.random() * 3) + 1;
+                    if (Math.random() * 100 < dados.configuracoes.taxaDoar) {
+                        const valor = [5,10,20][Math.floor(Math.random() * 3)];
+                        c.saldo += valor;
+                        dados.estatisticas.totalSaldos += valor;
+                    }
+                });
+
+                salvarDados();
+            }, intervalo);
+        }
+
+        // INICIALIZAÇÃO GERAL
+        function atualizarInterface() {
+            preencherModalPerfil();
+            renderizarPublicacoes();
+        }
+
+        document.addEventListener('DOMContentLoaded', carregarDados);
+    </script>
+</body>
+</html>

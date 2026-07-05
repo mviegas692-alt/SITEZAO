@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Usuários - GameHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { colors: { dark:'#12151C', secondary:'#1E293B', primary:'#2563EB', red:'#EF4444', green:'#10B981', yellow:'#F59E0B' } } } }
+    </script>
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .scrollbar-thin::-webkit-scrollbar { width:6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background:#1E293B; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background:#475569; border-radius:3px; }
+    </style>
+</head>
+<body class="bg-dark text-gray-100 min-h-screen">
+
+<header class="bg-secondary/95 backdrop-blur border-b border-gray-700 sticky top-0 z-40">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-primary flex items-center gap-2"><i class="fa fa-users"></i> Gerenciar Usuários</h1>
+        <div class="flex gap-3">
+            <button onclick="carregarUsuarios()" class="px-3 py-1.5 bg-primary rounded-lg text-sm"><i class="fa fa-refresh mr-1"></i> Atualizar</button>
+            <a href="gamehub_completo.html" class="px-3 py-1.5 bg-gray-600 rounded-lg text-sm"><i class="fa fa-arrow-left mr-1"></i> Voltar</a>
+        </div>
+    </div>
+</header>
+
+<main class="container mx-auto px-4 py-6 max-w-5xl fade-in">
+    <div class="bg-secondary p-4 rounded-xl border border-gray-700 mb-6">
+        <input type="text" id="buscaUsuario" placeholder="Buscar por nome ou e-mail..." class="w-full p-3 rounded-lg bg-dark border border-gray-600" oninput="filtrarUsuarios()">
+    </div>
+
+    <div class="bg-secondary rounded-xl border border-gray-700 overflow-hidden">
+        <div class="p-4 border-b border-gray-700"><h2 class="text-lg font-semibold">Lista de Usuários</h2></div>
+        <div id="listaUsuarios" class="p-4 space-y-4 max-h-[75vh] overflow-y-auto scrollbar-thin"></div>
+    </div>
+</main>
+
+<script>
+let contas = JSON.parse(localStorage.getItem('gh_contas')) || [];
+
+function carregarUsuarios() {
+    contas = JSON.parse(localStorage.getItem('gh_contas')) || [];
+    exibirUsuarios(contas);
+}
+
+function exibirUsuarios(lista) {
+    const div = document.getElementById('listaUsuarios');
+    if(!lista.length) { div.innerHTML = '<p class="text-center text-gray-400 py-8">Nenhum usuário cadastrado</p>'; return; }
+    div.innerHTML = lista.map(u => `
+        <div class="bg-dark p-4 rounded-lg border border-gray-600 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <div>
+                <h4 class="font-semibold text-lg">${u.nome}</h4>
+                <p class="text-sm text-gray-400">${u.email}</p>
+                <span class="text-xs ${u.ehAdmin ? 'text-red-400' : u.ehDestaque ? 'text-yellow-400' : 'text-gray-400'}">
+                    ${u.ehAdmin ? 'Administrador' : u.ehDestaque ? 'Criador Destaque' : 'Usuário Comum'}
+                </span>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="alterarPermissao(${u.id})" class="px-3 py-1 bg-yellow-600 hover:bg-yellow-700 rounded text-sm">Alterar Nível</button>
+                <button onclick="removerUsuario(${u.id})" class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">Remover</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function filtrarUsuarios() {
+    const termo = document.getElementById('buscaUsuario').value.toLowerCase();
+    const filtrados = contas.filter(u => u.nome.toLowerCase().includes(termo) || u.email.toLowerCase().includes(termo));
+    exibirUsuarios(filtrados);
+}
+
+function alterarPermissao(id) {
+    const idx = contas.findIndex(u => u.id === id);
+    if(idx === -1) return;
+    contas[idx].ehDestaque = !contas[idx].ehDestaque;
+    localStorage.setItem('gh_contas', JSON.stringify(contas));
+    carregarUsuarios();
+}
+
+function removerUsuario(id) {
+    if(!confirm('Deseja remover este usuário permanentemente?')) return;
+    contas = contas.filter(u => u.id !== id);
+    localStorage.setItem('gh_contas', JSON.stringify(contas));
+    carregarUsuarios();
+}
+
+window.onload = carregarUsuarios;
+</script>
+</body>
+</html>

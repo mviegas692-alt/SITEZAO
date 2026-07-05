@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatórios - GameHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { colors: { dark:'#12151C', secondary:'#1E293B', primary:'#2563EB', green:'#10B981', yellow:'#F59E0B' } } } }
+    </script>
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    </style>
+</head>
+<body class="bg-dark text-gray-100 min-h-screen">
+
+<header class="bg-secondary/95 backdrop-blur border-b border-gray-700 sticky top-0 z-40">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-primary flex items-center gap-2"><i class="fa fa-file-text"></i> Relatórios de Atividades</h1>
+        <a href="gamehub_completo.html" class="px-3 py-1.5 bg-gray-600 rounded-lg text-sm"><i class="fa fa-arrow-left mr-1"></i> Voltar</a>
+    </div>
+</header>
+
+<main class="container mx-auto px-4 py-6 max-w-4xl fade-in">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-secondary p-5 rounded-xl border border-gray-700">
+            <h3 class="text-lg font-semibold mb-4">Relatório de Downloads</h3>
+            <p class="text-gray-300 mb-4">Total geral de downloads: <span class="text-green-400 font-bold" id="relDownloads">0</span></p>
+            <button onclick="gerarRelatorio('downloads')" class="w-full p-3 bg-primary rounded-lg">Gerar e Exportar</button>
+        </div>
+        <div class="bg-secondary p-5 rounded-xl border border-gray-700">
+            <h3 class="text-lg font-semibold mb-4">Relatório de Denúncias</h3>
+            <p class="text-gray-300 mb-4">Total de denúncias: <span class="text-yellow-400 font-bold" id="relDenuncias">0</span></p>
+            <button onclick="gerarRelatorio('denuncias')" class="w-full p-3 bg-primary rounded-lg">Gerar e Exportar</button>
+        </div>
+    </div>
+</main>
+
+<script>
+function gerarRelatorio(tipo) {
+    const dados = {
+        dataGeracao: new Date().toLocaleString('pt-BR'),
+        tipo: tipo
+    };
+    if(tipo === 'downloads') {
+        const jogos = JSON.parse(localStorage.getItem('gh_jogos')) || [];
+        dados.total = jogos.reduce((s,j) => s + j.downloads, 0);
+        dados.jogos = jogos.map(j => ({nome:j.nome, autor:j.autor, downloads:j.downloads}));
+    } else if(tipo === 'denuncias') {
+        const den = JSON.parse(localStorage.getItem('gh_denuncias')) || [];
+        dados.total = den.length;
+        dados.lista = den;
+    }
+    const blob = new Blob([JSON.stringify(dados, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `relatorio_${tipo}_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+}
+
+window.onload = () => {
+    const jogos = JSON.parse(localStorage.getItem('gh_jogos')) || [];
+    const den = JSON.parse(localStorage.getItem('gh_denuncias')) || [];
+    document.getElementById('relDownloads').textContent = jogos.reduce((s,j) => s + j.downloads, 0).toLocaleString('pt-BR');
+    document.getElementById('relDenuncias').textContent = den.length;
+};
+</script>
+</body>
+</html>

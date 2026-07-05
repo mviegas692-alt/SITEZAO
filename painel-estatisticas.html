@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estatísticas - GameHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#12151C', secondary: '#1E293B', primary: '#2563EB',
+                        green: '#10B981', yellow: '#F59E0B', red: '#EF4444', graytext: '#94A3B8'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { scroll-behavior: smooth; }
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .scrollbar-thin::-webkit-scrollbar { width:6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background:#1E293B; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background:#475569; border-radius:3px; }
+    </style>
+</head>
+<body class="bg-dark text-gray-100 min-h-screen">
+
+<header class="bg-secondary/95 backdrop-blur border-b border-gray-700 sticky top-0 z-40">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-primary flex items-center gap-2"><i class="fa fa-bar-chart"></i> Painel de Estatísticas</h1>
+        <div class="flex gap-3">
+            <button onclick="carregarDados()" class="px-3 py-1.5 bg-primary rounded-lg text-sm"><i class="fa fa-refresh mr-1"></i> Atualizar</button>
+            <a href="gamehub_completo.html" class="px-3 py-1.5 bg-gray-600 rounded-lg text-sm"><i class="fa fa-arrow-left mr-1"></i> Voltar</a>
+        </div>
+    </div>
+</header>
+
+<main class="container mx-auto px-4 py-6 max-w-6xl fade-in">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="bg-secondary p-5 rounded-xl border border-gray-700">
+            <h3 class="text-sm text-gray-400">Total de Jogos</h3>
+            <p class="text-3xl font-bold text-white" id="totalJogos">0</p>
+        </div>
+        <div class="bg-secondary p-5 rounded-xl border border-gray-700">
+            <h3 class="text-sm text-gray-400">Total de Usuários</h3>
+            <p class="text-3xl font-bold text-white" id="totalUsuarios">0</p>
+        </div>
+        <div class="bg-secondary p-5 rounded-xl border border-gray-700">
+            <h3 class="text-sm text-gray-400">Downloads Gerais</h3>
+            <p class="text-3xl font-bold text-green-400" id="totalDownloads">0</p>
+        </div>
+        <div class="bg-secondary p-5 rounded-xl border border-gray-700">
+            <h3 class="text-sm text-gray-400">Denúncias Recebidas</h3>
+            <p class="text-3xl font-bold text-yellow-400" id="totalDenuncias">0</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-secondary p-5 rounded-xl border border-gray-700">
+            <h3 class="text-lg font-semibold mb-4">Downloads por Categoria</h3>
+            <canvas id="graficoCategorias" height="250"></canvas>
+        </div>
+        <div class="bg-secondary p-5 rounded-xl border border-gray-700">
+            <h3 class="text-lg font-semibold mb-4">Jogos Mais Baixados</h3>
+            <div id="rankingJogos" class="space-y-3 max-h-[250px] overflow-y-auto scrollbar-thin"></div>
+        </div>
+    </div>
+</main>
+
+<script>
+let jogos = JSON.parse(localStorage.getItem('gh_jogos')) || [];
+let contas = JSON.parse(localStorage.getItem('gh_contas')) || [];
+let denuncias = JSON.parse(localStorage.getItem('gh_denuncias')) || [];
+
+function carregarDados() {
+    jogos = JSON.parse(localStorage.getItem('gh_jogos')) || [];
+    contas = JSON.parse(localStorage.getItem('gh_contas')) || [];
+    denuncias = JSON.parse(localStorage.getItem('gh_denuncias')) || [];
+
+    document.getElementById('totalJogos').textContent = jogos.length;
+    document.getElementById('totalUsuarios').textContent = contas.length;
+    document.getElementById('totalDownloads').textContent = jogos.reduce((s,j) => s + (j.downloads || 0), 0).toLocaleString('pt-BR');
+    document.getElementById('totalDenuncias').textContent = denuncias.length;
+
+    gerarGraficoCategorias();
+    gerarRanking();
+}
+
+function gerarGraficoCategorias() {
+    const categorias = {};
+    jogos.forEach(j => { categorias[j.categoria] = (categorias[j.categoria] || 0) + (j.downloads || 0); });
+    const ctx = document.getElementById('graficoCategorias');
+    if(window.chartCat) window.chartCat.destroy();
+    window.chartCat = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: Object.keys(categorias).map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+            datasets: [{ data: Object.values(categorias), backgroundColor: ['#2563EB','#10B981','#F59E0B','#EF4444','#8B5CF6'] }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+    });
+}
+
+function gerarRanking() {
+    const lista = [...jogos].sort((a,b) => b.downloads - a.downloads).slice(0,5);
+    document.getElementById('rankingJogos').innerHTML = lista.map((j,i) => `
+        <div class="flex justify-between items-center p-3 bg-dark rounded-lg border border-gray-600">
+            <span class="font-medium">${i+1}. ${j.nome}</span>
+            <span class="text-green-400">⬇️ ${j.downloads.toLocaleString('pt-BR')}</span>
+        </div>
+    `).join('') || '<p class="text-gray-400 text-center">Nenhum dado disponível</p>';
+}
+
+window.onload = carregarDados;
+</script>
+</body>
+</html>

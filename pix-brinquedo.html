@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💰 Doação do Bot - Pix de Brincadeira</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#12151C',
+                        secondary: '#1E293B',
+                        pixgreen: '#10B981',
+                        gold: '#F59E0B',
+                        graytext: '#94A3B8'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { scroll-behavior: smooth; }
+        .fade-in { animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn {
+            from { opacity:0; transform: scale(0.9); }
+            to { opacity:1; transform: scale(1); }
+        }
+        .pulse-pix { animation: pulse 1.5s infinite; }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .valor-grande { font-size: 3rem; font-weight: bold; }
+        .animar-saldo { transition: all 1s ease-out; }
+    </style>
+</head>
+<body class="bg-dark text-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+    <div class="w-full max-w-md fade-in">
+        <!-- Cabeçalho -->
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-gold mb-2">🤖 Doação do Bot Amigável</h1>
+            <p class="text-gray-400">Sistema de brincadeira — sem valor real!</p>
+        </div>
+
+        <!-- Área do Saldo do Banco (Simulado) -->
+        <div class="bg-secondary p-6 rounded-xl border border-gray-700 mb-6">
+            <h3 class="text-sm text-gray-400 mb-1">Seu Saldo Simulado</h3>
+            <p id="saldo" class="valor-grande text-pixgreen animar-saldo">R$ 0,00</p>
+        </div>
+
+        <!-- Escolher Valor -->
+        <div class="bg-secondary p-6 rounded-xl border border-gray-700 mb-6">
+            <h3 class="text-lg font-semibold mb-4">Quanto o Bot vai te doar?</h3>
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button onclick="definirValor(50)" class="p-3 bg-dark rounded-lg border border-gray-600 hover:border-pixgreen transition">R$ 50,00</button>
+                <button onclick="definirValor(200)" class="p-3 bg-dark rounded-lg border border-gray-600 hover:border-pixgreen transition">R$ 200,00</button>
+                <button onclick="definirValor(1000)" class="p-3 bg-dark rounded-lg border border-gray-600 hover:border-pixgreen transition">R$ 1.000,00</button>
+                <button onclick="definirValor(5000)" class="p-3 bg-dark rounded-lg border border-gray-600 hover:border-pixgreen transition">R$ 5.000,00</button>
+            </div>
+            <div class="mb-4">
+                <label class="block text-sm text-gray-400 mb-1">Ou digite qualquer valor:</label>
+                <input type="number" id="valorPersonalizado" min="1" placeholder="R$ 0,00" class="w-full p-3 rounded-lg bg-dark border border-gray-600 focus:outline-none focus:ring-2 focus:ring-pixgreen/50">
+            </div>
+            <button onclick="usarValorPersonalizado()" class="w-full p-3 bg-gold hover:bg-yellow-600 rounded-lg font-semibold">Usar esse valor</button>
+        </div>
+
+        <!-- Botão de Receber Pix -->
+        <button id="btnReceber" onclick="receberPix()" class="w-full p-4 bg-pixgreen hover:bg-green-600 rounded-xl font-bold text-lg pulse-pix transition-all">
+            <i class="fa fa-money mr-2"></i> Receber Doação do Bot 🤖
+        </button>
+
+        <!-- Área de Confirmação -->
+        <div id="confirmacao" class="hidden mt-6 bg-secondary p-5 rounded-xl border border-pixgreen">
+            <div class="flex items-center gap-3 mb-3">
+                <i class="fa fa-check-circle text-2xl text-pixgreen"></i>
+                <h3 class="text-xl font-bold text-pixgreen">PIX RECEBIDO!</h3>
+            </div>
+            <div class="space-y-2 text-sm">
+                <p><strong>Pagador:</strong> Bot Doador Oficial 🤖</p>
+                <p><strong>Valor:</strong> <span id="valorRecebido"></span></p>
+                <p><strong>Data/Hora:</strong> <span id="dataHora"></span></p>
+                <p><strong>Descrição:</strong> Presente para o melhor criador de jogos! 🎮</p>
+                <p class="text-gold font-semibold mt-3">✅ Valor caiu no seu saldo simulado!</p>
+            </div>
+        </div>
+
+        <!-- Botão voltar ao menu -->
+        <div class="mt-6 text-center">
+            <a href="menu-admin.html" class="text-gray-400 hover:text-white transition">← Voltar ao Menu Principal</a>
+        </div>
+    </div>
+
+<script>
+let saldoAtual = 0;
+let valorEscolhido = 0;
+
+// Carregar saldo salvo do navegador
+window.onload = () => {
+    saldoAtual = parseFloat(localStorage.getItem('saldo_simulado') || '0');
+    atualizarSaldo();
+};
+
+function definirValor(valor) {
+    valorEscolhido = valor;
+    alert(`Valor definido: R$ ${valor.toLocaleString('pt-BR', {minimumFractionDigits:2})}`);
+}
+
+function usarValorPersonalizado() {
+    const input = document.getElementById('valorPersonalizado').value;
+    valorEscolhido = parseFloat(input) || 0;
+    if(valorEscolhido <=0) return alert('Digite um valor válido!');
+    alert(`Valor personalizado definido: R$ ${valorEscolhido.toLocaleString('pt-BR', {minimumFractionDigits:2})}`);
+}
+
+function receberPix() {
+    if(valorEscolhido <=0) return alert('Primeiro escolha ou digite um valor!');
+
+    // Efeito de carregamento
+    const btn = document.getElementById('btnReceber');
+    btn.innerHTML = '<i class="fa fa-spinner fa-spin mr-2"></i> Processando doação...';
+    btn.disabled = true;
+
+    // Simular tempo de processamento
+    setTimeout(() => {
+        // Adicionar ao saldo
+        saldoAtual += valorEscolhido;
+        localStorage.setItem('saldo_simulado', saldoAtual.toString());
+        atualizarSaldo();
+
+        // Mostrar confirmação
+        document.getElementById('valorRecebido').textContent = `R$ ${valorEscolhido.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        document.getElementById('dataHora').textContent = new Date().toLocaleString('pt-BR');
+        document.getElementById('confirmacao').classList.remove('hidden');
+
+        // Restaurar botão
+        btn.innerHTML = '<i class="fa fa-money mr-2"></i> Receber Outra Doação 🤖';
+        btn.disabled = false;
+        valorEscolhido = 0;
+    }, 2000);
+}
+
+function atualizarSaldo() {
+    document.getElementById('saldo').textContent = `R$ ${saldoAtual.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+}
+</script>
+</body>
+</html>

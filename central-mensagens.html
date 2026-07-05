@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Mensagens - GameHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { colors: { dark:'#12151C', secondary:'#1E293B', primary:'#2563EB', green:'#10B981', yellow:'#F59E0B' } } } }
+    </script>
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .scrollbar-thin::-webkit-scrollbar { width:6px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background:#1E293B; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background:#475569; border-radius:3px; }
+    </style>
+</head>
+<body class="bg-dark text-gray-100 min-h-screen">
+
+<header class="bg-secondary/95 backdrop-blur border-b border-gray-700 sticky top-0 z-40">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-primary flex items-center gap-2"><i class="fa fa-envelope"></i> Central de Mensagens</h1>
+        <div class="flex gap-3">
+            <button onclick="carregarMensagens()" class="px-3 py-1.5 bg-primary rounded-lg text-sm"><i class="fa fa-refresh mr-1"></i> Atualizar</button>
+            <a href="gamehub_completo.html" class="px-3 py-1.5 bg-gray-600 rounded-lg text-sm"><i class="fa fa-arrow-left mr-1"></i> Voltar</a>
+        </div>
+    </div>
+</header>
+
+<main class="container mx-auto px-4 py-6 max-w-5xl fade-in">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1 bg-secondary p-4 rounded-xl border border-gray-700">
+            <h3 class="text-lg font-semibold mb-4">Nova Mensagem</h3>
+            <div class="space-y-3">
+                <input type="text" id="destinatario" placeholder="Para: Todos ou nome do usuário" class="w-full p-3 rounded-lg bg-dark border border-gray-600">
+                <input type="text" id="assunto" placeholder="Assunto" class="w-full p-3 rounded-lg bg-dark border border-gray-600">
+                <textarea id="textoMensagem" rows="4" placeholder="Escreva sua mensagem..." class="w-full p-3 rounded-lg bg-dark border border-gray-600"></textarea>
+                <button onclick="enviarMensagem()" class="w-full p-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium">Enviar Mensagem</button>
+            </div>
+        </div>
+
+        <div class="lg:col-span-2 bg-secondary p-4 rounded-xl border border-gray-700">
+            <h3 class="text-lg font-semibold mb-4">Caixa de Entrada</h3>
+            <div id="listaMensagens" class="space-y-3 max-h-[60vh] overflow-y-auto scrollbar-thin"></div>
+        </div>
+    </div>
+</main>
+
+<script>
+let mensagens = JSON.parse(localStorage.getItem('gh_mensagens')) || [];
+
+function carregarMensagens() {
+    mensagens = JSON.parse(localStorage.getItem('gh_mensagens')) || [];
+    exibirMensagens();
+}
+
+function exibirMensagens() {
+    const div = document.getElementById('listaMensagens');
+    if(!mensagens.length) { div.innerHTML = '<p class="text-center text-gray-400 py-8">Nenhuma mensagem recebida</p>'; return; }
+    div.innerHTML = mensagens.map(m => `
+        <div class="bg-dark p-3 rounded-lg border border-gray-600">
+            <div class="flex justify-between items-center">
+                <h4 class="font-medium">${m.assunto}</h4>
+                <span class="text-xs text-gray-400">${m.data}</span>
+            </div>
+            <p class="text-sm text-gray-300 mt-1">De: ${m.remetente} | Para: ${m.destinatario}</p>
+            <p class="text-sm mt-2">${m.texto}</p>
+        </div>
+    `).join('');
+}
+
+function enviarMensagem() {
+    const nova = {
+        id: Date.now(),
+        remetente: 'Administrador',
+        destinatario: document.getElementById('destinatario').value,
+        assunto: document.getElementById('assunto').value,
+        texto: document.getElementById('textoMensagem').value,
+        data: new Date().toLocaleString('pt-BR')
+    };
+    if(!nova.destinatario || !nova.assunto || !nova.texto) return alert('Preencha todos os campos!');
+    mensagens.unshift(nova);
+    localStorage.setItem('gh_mensagens', JSON.stringify(mensagens));
+    carregarMensagens();
+    document.getElementById('destinatario').value = '';
+    document.getElementById('assunto').value = '';
+    document.getElementById('textoMensagem').value = '';
+    alert('Mensagem enviada!');
+}
+
+window.onload = carregarMensagens;
+</script>
+</body>
+</html>

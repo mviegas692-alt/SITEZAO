@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Bots - GameHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = { theme: { extend: { colors: { dark:'#12151C', secondary:'#1E293B', primary:'#2563EB', green:'#10B981', red:'#EF4444' } } } }
+    </script>
+    <style>
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    </style>
+</head>
+<body class="bg-dark text-gray-100 min-h-screen">
+
+<header class="bg-secondary/95 backdrop-blur border-b border-gray-700 sticky top-0 z-40">
+    <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+        <h1 class="text-xl font-bold text-primary flex items-center gap-2"><i class="fa fa-android"></i> Controle de Bots</h1>
+        <a href="gamehub_completo.html" class="px-3 py-1.5 bg-gray-600 rounded-lg text-sm"><i class="fa fa-arrow-left mr-1"></i> Voltar</a>
+    </div>
+</header>
+
+<main class="container mx-auto px-4 py-6 max-w-4xl fade-in">
+    <div class="bg-secondary p-6 rounded-xl border border-gray-700 mb-6">
+        <h3 class="text-lg font-semibold mb-4">Adicionar Bots Prontos</h3>
+        <div class="space-y-3">
+            <button onclick="adicionarBotsCriadores()" class="w-full p-3 bg-green-600 hover:bg-green-700 rounded-lg">Adicionar 10 Criadores Originais</button>
+            <button onclick="adicionarBotsCopiadores()" class="w-full p-3 bg-red-600 hover:bg-red-700 rounded-lg">Adicionar 10 Perfis Suspeitos/Copiadores</button>
+            <button onclick="adicionarBotsUsuarios()" class="w-full p-3 bg-blue-600 hover:bg-blue-700 rounded-lg">Adicionar 20 Usuários Comuns</button>
+            <button onclick="removerTodosBots()" class="w-full p-3 bg-yellow-600 hover:bg-yellow-700 rounded-lg">Remover Todos os Bots</button>
+        </div>
+    </div>
+</main>
+
+<script>
+let contas = JSON.parse(localStorage.getItem('gh_contas')) || [];
+let jogos = JSON.parse(localStorage.getItem('gh_jogos')) || [];
+
+function adicionarBotsCriadores() {
+    const nomes = ['DarkStudio','PixelMaster','AventurasBR','TechDev','MiniJogos','FantasyWorld','AcaoTotal','MundoAberto','SurvivalMestre','FuturoDigital'];
+    nomes.forEach(nome => {
+        if(!contas.find(u => u.nome === nome)) {
+            contas.push({id:Date.now()+Math.random(), nome, email:`${nome.toLowerCase()}@bot.com`, ehDestaque:false, ehAdmin:false});
+        }
+    });
+    salvar();
+    alert('Criadores adicionados!');
+}
+
+function adicionarBotsCopiadores() {
+    const nomes = ['CopiasRapidas','JogosModificados','VersaoAlternativa','CloneMaster','JogosSemNome','ModificadorBR','CopiaFacil','VersaoGratuita','Reutilizados','Reenviador'];
+    nomes.forEach(nome => {
+        if(!contas.find(u => u.nome === nome)) {
+            contas.push({id:Date.now()+Math.random(), nome, email:`${nome.toLowerCase()}@bot.com`, ehDestaque:false, ehAdmin:false});
+        }
+    });
+    salvar();
+    alert('Perfis suspeitos adicionados!');
+}
+
+function adicionarBotsUsuarios() {
+    const nomes = ['Gamer99','JogadorNoturno','Explorador','ComentadorAtivo','Colecionador','Casual','FaDeTerror','AmanteRetro','Estrategista','Seguidor','NovoJogador','Viciado','Aventureiro','Testador','Avaliador','Membro','Visitante','JogadorBR','FãGame','UsuarioComum'];
+    nomes.forEach(nome => {
+        if(!contas.find(u => u.nome === nome)) {
+            contas.push({id:Date.now()+Math.random(), nome, email:`${nome.toLowerCase()}@bot.com`, ehDestaque:false, ehAdmin:false});
+        }
+    });
+    salvar();
+    alert('Usuários adicionados!');
+}
+
+function removerTodosBots() {
+    if(!confirm('Deseja remover TODOS os perfis de bot?')) return;
+    contas = contas.filter(u => !u.email.endsWith('@bot.com'));
+    jogos = jogos.filter(j => !j.autor.endsWith('@bot.com') && !['DarkStudio','CopiasRapidas','Gamer99'].includes(j.autor));
+    salvar();
+    alert('Bots removidos!');
+}
+
+function salvar() {
+    localStorage.setItem('gh_contas', JSON.stringify(contas));
+    localStorage.setItem('gh_jogos', JSON.stringify(jogos));
+}
+</script>
+</body>
+</html>

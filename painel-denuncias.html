@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Denúncias - GameHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#12151C',
+                        secondary: '#1E293B',
+                        primary: '#2563EB',
+                        red: '#EF4444',
+                        yellow: '#F59E0B',
+                        green: '#10B981',
+                        graytext: '#94A3B8'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        * { scroll-behavior: smooth; }
+        .fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: #1E293B;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: #64748B;
+        }
+    </style>
+</head>
+<body class="bg-dark text-gray-100 min-h-screen">
+
+    <!-- Cabeçalho -->
+    <header class="bg-secondary/95 backdrop-blur border-b border-gray-700 sticky top-0 z-40">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-primary flex items-center gap-2">
+                <i class="fa fa-shield"></i> Painel de Denúncias
+            </h1>
+            <div class="flex gap-3">
+                <button onclick="carregarDenuncias()" class="px-3 py-1.5 bg-primary hover:bg-blue-600 rounded-lg text-sm">
+                    <i class="fa fa-refresh mr-1"></i> Atualizar
+                </button>
+                <a href="gamehub_completo.html" class="px-3 py-1.5 bg-gray-600 hover:bg-gray-500 rounded-lg text-sm">
+                    <i class="fa fa-arrow-left mr-1"></i> Voltar à Plataforma
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="container mx-auto px-4 py-6 max-w-5xl fade-in">
+        <!-- Resumo Geral -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div class="bg-secondary p-5 rounded-xl border border-gray-700">
+                <h3 class="text-sm text-gray-400 mb-1">Total de Denúncias</h3>
+                <p class="text-3xl font-bold text-white" id="totalDenuncias">0</p>
+            </div>
+            <div class="bg-secondary p-5 rounded-xl border border-yellow-700/40">
+                <h3 class="text-sm text-gray-400 mb-1">Em Análise</h3>
+                <p class="text-3xl font-bold text-yellow-400" id="denunciasAnalise">0</p>
+            </div>
+            <div class="bg-secondary p-5 rounded-xl border border-green-700/40">
+                <h3 class="text-sm text-gray-400 mb-1">Resolvidas</h3>
+                <p class="text-3xl font-bold text-green-400" id="denunciasResolvidas">0</p>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="bg-secondary p-4 rounded-xl border border-gray-700 mb-6">
+            <h3 class="text-lg font-semibold mb-3">Filtrar por Status</h3>
+            <div class="flex flex-wrap gap-3">
+                <button onclick="filtrarStatus('todos')" class="px-4 py-2 rounded-lg bg-primary hover:bg-blue-600 text-sm">Todos</button>
+                <button onclick="filtrarStatus('analise')" class="px-4 py-2 rounded-lg bg-yellow-700/30 hover:bg-yellow-700/50 text-sm">Em Análise</button>
+                <button onclick="filtrarStatus('resolvida')" class="px-4 py-2 rounded-lg bg-green-700/30 hover:bg-green-700/50 text-sm">Resolvidas</button>
+                <button onclick="filtrarStatus('rejeitada')" class="px-4 py-2 rounded-lg bg-red-700/30 hover:bg-red-700/50 text-sm">Rejeitadas</button>
+            </div>
+        </div>
+
+        <!-- Lista de Denúncias -->
+        <div class="bg-secondary rounded-xl border border-gray-700 overflow-hidden">
+            <div class="p-4 border-b border-gray-700">
+                <h2 class="text-xl font-bold">Lista de Denúncias Recebidas</h2>
+            </div>
+            <div id="listaDenuncias" class="p-4 space-y-4 max-h-[65vh] overflow-y-auto scrollbar-thin">
+                <p class="text-center text-gray-400 py-10">Nenhuma denúncia encontrada no sistema.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Detalhes da Denúncia -->
+    <div id="modalDetalhes" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden p-4 fade-in">
+        <div class="bg-secondary rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto scrollbar-thin p-6 border border-gray-700">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-2xl font-bold">Detalhes da Denúncia</h3>
+                <button onclick="fecharModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="conteudoModal" class="space-y-4 text-sm md:text-base"></div>
+        </div>
+    </div>
+
+    <script>
+        // Variável que acessa os mesmos dados da plataforma
+        let denuncias = [];
+
+        // Carrega as denúncias salvas no navegador
+        function carregarDenuncias() {
+            denuncias = JSON.parse(localStorage.getItem('gh_denuncias')) || [];
+            
+            // Atualiza os números do resumo
+            document.getElementById('totalDenuncias').textContent = denuncias.length;
+            document.getElementById('denunciasAnalise').textContent = denuncias.filter(d => d.status === 'Em análise').length;
+            document.getElementById('denunciasResolvidas').textContent = denuncias.filter(d => d.status === 'Resolvida').length;
+
+            // Exibe todas as denúncias
+            exibirDenuncias(denuncias);
+        }
+
+        // Exibe a lista de denúncias
+        function exibirDenuncias(lista) {
+            const container = document.getElementById('listaDenuncias');
+            if (lista.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 py-10">Nenhuma denúncia encontrada para esse filtro.</p>`;
+                return;
+            }
+
+            container.innerHTML = lista.map(d => `
+                <div class="bg-dark p-4 rounded-lg border ${getStatusBorda(d.status)} hover:border-gray-500 transition-colors">
+                    <div class="flex flex-col md:flex-row justify-between gap-3">
+                        <div>
+                            <h4 class="font-semibold text-lg">${d.jogo || 'Jogo não informado'}</h4>
+                            <p class="text-gray-300 text-sm mt-1">
+                                <strong>Denunciado:</strong> ${d.autorDenunciado || 'Desconhecido'} | 
+                                <strong>Denunciante:</strong> ${d.autorDenunciante || 'Desconhecido'}
+                            </p>
+                            <p class="text-gray-400 text-xs mt-2">Enviada em: ${d.data || 'Data não registrada'}</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="px-3 py-1 rounded-full text-xs font-medium ${getStatusCor(d.status)}">${d.status}</span>
+                            <button onclick="abrirDetalhes(${d.id})" class="px-3 py-1.5 bg-primary hover:bg-blue-600 rounded-lg text-sm">Ver Detalhes</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Abre modal com detalhes completos
+        function abrirDetalhes(idDenuncia) {
+            const denuncia = denuncias.find(d => d.id === idDenuncia);
+            if (!denuncia) return;
+
+            const conteudo = document.getElementById('conteudoModal');
+            conteudo.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-gray-400">ID da Denúncia</p>
+                        <p class="font-medium">${denuncia.id}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-400">Status Atual</p>
+                        <select id="statusDenuncia" onchange="alterarStatus(${denuncia.id})" class="w-full p-2 rounded bg-dark border border-gray-600 mt-1">
+                            <option value="Em análise" ${denuncia.status === 'Em análise' ? 'selected' : ''}>Em análise</option>
+                            <option value="Resolvida" ${denuncia.status === 'Resolvida' ? 'selected' : ''}>Resolvida</option>
+                            <option value="Rejeitada" ${denuncia.status === 'Rejeitada' ? 'selected' : ''}>Rejeitada</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-gray-400">Nome do Jogo</p>
+                    <p class="font-medium">${denuncia.jogo}</p>
+                </div>
+                <div>
+                    <p class="text-gray-400">Autor Denunciado</p>
+                    <p class="font-medium">${denuncia.autorDenunciado}</p>
+                </div>
+                <div>
+                    <p class="text-gray-400">Denunciante</p>
+                    <p class="font-medium">${denuncia.autorDenunciante}</p>
+                </div>
+                <div>
+                    <p class="text-gray-400">Data e Hora</p>
+                    <p class="font-medium">${denuncia.data}</p>
+                </div>
+                <div>
+                    <p class="text-gray-400">Motivo da Denúncia</p>
+                    <div class="bg-dark p-3 rounded border border-gray-600 mt-1 whitespace-pre-wrap">${denuncia.motivo}</div>
+                </div>
+                <div class="flex justify-end mt-4">
+                    <button onclick="fecharModal()" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg">Fechar</button>
+                </div>
+            `;
+
+            document.getElementById('modalDetalhes').classList.remove('hidden');
+        }
+
+        // Altera o status da denúncia
+        function alterarStatus(id) {
+            const novoStatus = document.getElementById('statusDenuncia').value;
+            const index = denuncias.findIndex(d => d.id === id);
+            if (index !== -1) {
+                denuncias[index].status = novoStatus;
+                localStorage.setItem('gh_denuncias', JSON.stringify(denuncias));
+                carregarDenuncias();
+            }
+        }
+
+        // Filtra por status
+        function filtrarStatus(status) {
+            if (status === 'todos') {
+                exibirDenuncias(denuncias);
+            } else {
+                const filtradas = denuncias.filter(d => {
+                    if (status === 'analise') return d.status === 'Em análise';
+                    if (status === 'resolvida') return d.status === 'Resolvida';
+                    if (status === 'rejeitada') return d.status === 'Rejeitada';
+                });
+                exibirDenuncias(filtradas);
+            }
+        }
+
+        // Fecha o modal
+        function fecharModal() {
+            document.getElementById('modalDetalhes').classList.add('hidden');
+        }
+
+        // Cores para status
+        function getStatusCor(status) {
+            switch(status) {
+                case 'Em análise': return 'bg-yellow-700/40 text-yellow-200';
+                case 'Resolvida': return 'bg-green-700/40 text-green-200';
+                case 'Rejeitada': return 'bg-red-700/40 text-red-200';
+                default: return 'bg-gray-700/40 text-gray-200';
+            }
+        }
+
+        function getStatusBorda(status) {
+            switch(status) {
+                case 'Em análise': return 'border-yellow-700/40';
+                case 'Resolvida': return 'border-green-700/40';
+                case 'Rejeitada': return 'border-red-700/40';
+                default: return 'border-gray-700';
+            }
+        }
+
+        // Carrega tudo ao abrir a página
+        window.onload = carregarDenuncias;
+    </script>
+
+</body>
+</html>
